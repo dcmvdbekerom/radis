@@ -24,7 +24,7 @@ import cython
 from cython.operator import dereference, postincrement
 from matplotlib import pyplot as plt
 
-__version__ = 42069
+__version__ = 42070
 
 cdef float epsilon   = <float> 0.0001
 cdef float FLOAT_MAX = <float> 1e30
@@ -607,6 +607,8 @@ cdef void calc_lorentzian_params():
 
     cdef float log_dwL = (log_wL_max - log_wL_min) / (init_params_h.N_wL - 1)
 
+    print(log_wL_min,log_dwL)
+
     iter_params_h.log_wL_min = log_wL_min
     iter_params_h.log_dwL = log_dwL
     return
@@ -661,6 +663,7 @@ cdef void calc_gaussian_params():
     cdef float log_wG_max = host_params_h_log_2vMm_max + iter_params_h.hlog_T + epsilon
     cdef float log_dwG = (log_wG_max - log_wG_min) / (init_params_h.N_wG - 1)
 
+    print(log_wG_min, log_dwG)
     iter_params_h.log_wG_min = log_wG_min
     iter_params_h.log_dwG = log_dwG
 
