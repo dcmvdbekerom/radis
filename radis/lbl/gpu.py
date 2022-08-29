@@ -27,7 +27,8 @@ class initData(ctypes.Structure):
         ("N_points_per_thread", ctypes.c_int),
         ("N_iterations_per_thread", ctypes.c_int),
         ("shared_size_floats", ctypes.c_int),
-        ("log_c2Mm", ctypes.c_float * 16),
+        ("single_iso", ctypes.c_int),
+        ("log_c2Mm", ctypes.c_float * 15),
     ]
 
 
@@ -45,7 +46,7 @@ class iterData(ctypes.Structure):
         ("log_wL_min", ctypes.c_float),
         ("N_G", ctypes.c_int),
         ("N_L", ctypes.c_int),
-        ("Q", ctypes.c_float * 16),
+        ("Q", ctypes.c_float * 15),
     ]
 
 
@@ -463,9 +464,12 @@ def gpu_init(
         set_init_params = constant_memory_setter(cuda_module, "init_d")
 
     else:
+        from functools import partial
+
+        from numpy import array as _array
         from numpy import complex64, float32, zeros
 
-        array = lambda arr: arr
+        array = partial(_array, copy=False)
         from radis_cython_extensions import set_init_params
 
     init_h.v_min = np.min(v_arr)  # 2000.0
@@ -514,6 +518,8 @@ def gpu_init(
     transmittance_FT_d = zeros(init_h.N_v + 1, dtype=complex64)
 
     # #Copy spectral data to device
+
+    init_h.single_iso = iso[0] if len(iso) == 1 else 0
     iso_d = array(iso)
     v0_d = array(v0)
     da_d = array(da)
@@ -543,6 +549,7 @@ def gpu_init(
     if verbose >= 2:
         print("Copying initialization parameters to device memory...")
     set_init_params(init_h)
+    print(init_h.log_c2Mm[1])
 
     if verbose >= 2:
         print("done!")
@@ -640,6 +647,7 @@ def gpu_iterate(p, T, mole_fraction, l=1.0, slit_FWHM=0.0, verbose=0, gpu=False)
     )
 
     set_iter_params(iter_h)
+    print(iter_h.Q[1])
 
     if verbose >= 2:
         print("done!")

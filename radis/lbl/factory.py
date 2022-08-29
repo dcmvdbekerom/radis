@@ -1090,8 +1090,10 @@ class SpectrumFactory(BandFactory):
         if len(iso_set) > 1:
             iso = df["iso"].to_numpy(dtype=np.uint8)
         elif len(iso_set) == 1:
-            iso = np.full(len(v0), iso_set[0], dtype=np.uint8)
-
+            iso = np.array(iso_set, dtype=np.uint8)  # ndarray with single element
+        else:
+            raise ValueError("Cannot have less than one isotopologue!")
+        print("ISO:", iso)
         da = df["Pshft"].to_numpy(dtype=np.float32)
         El = df["El"].to_numpy(dtype=np.float32)
         na = df["Tdpair"].to_numpy(dtype=np.float32)

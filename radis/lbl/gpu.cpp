@@ -54,7 +54,8 @@ struct initData {
     int N_points_per_thread;
     int	N_iterations_per_thread;
     int shared_size_floats;
-    float log_c2Mm[16];
+    int single_iso;
+    float log_c2Mm[15];
 };
 
 
@@ -71,7 +72,7 @@ struct iterData {
     float log_wL_min;
     int N_G;
     int N_L;
-    float Q[16];
+    float Q[15];
 };
 
 __device__ __constant__ struct initData init_d;
@@ -105,13 +106,23 @@ __global__ void fillLDM(
 
     int N_G = iter_d.N_G;
     int N_L = iter_d.N_L;
+    float Q_i;
+    float log_c2Mm_i;
 
     agnostic_loop(threadIdx.x, blockDim.x){
         agnostic_loop(blockIdx.x, gridDim.x){
             for (int n = 0; n < init_d.N_iterations_per_thread; n++) {
 
                 int i = threadIdx.x + blockDim.x * (n + blockIdx.x * init_d.N_iterations_per_thread);
-
+                int iso_i;
+                if (init_d.single_iso > 0){
+                    iso_i = 0;
+                }
+                else{
+                    iso_i = iso[i];
+                }
+                log_c2Mm_i = init_d.log_c2Mm[iso_i];
+                Q_i = iter_d.Q[iso_i];
                 if (i < init_d.N_lines) {
                     //Calc v
                     // ... pressure-shift
@@ -123,7 +134,7 @@ __global__ void fillLDM(
                     if ((k0i >= 0) && (k1i < init_d.N_v)) {
 
                         //Calc wG
-                        float log_wGi = logf(v0[i]) + init_d.log_c2Mm[iso[i]] + iter_d.hlog_T;
+                        float log_wGi = logf(v0[i]) + log_c2Mm_i + iter_d.hlog_T;
                         float li = (log_wGi - iter_d.log_wG_min) / init_d.dxG;
                         int l0i = (int)li;
                         int l1i = l0i + 1;
@@ -136,7 +147,7 @@ __global__ void fillLDM(
 
                         //Calc I
                         // ... scale linestrengths under equilibrium
-                        float Si = iter_d.N * S0[i] * (expf(iter_d.c2T * El[i]) - expf(iter_d.c2T * (El[i] + v0[i]))) / iter_d.Q[iso[i]];
+                        float Si = iter_d.N * S0[i] * (expf(iter_d.c2T * El[i]) - expf(iter_d.c2T * (El[i] + v0[i]))) / Q_i;
 
                         float avi = ki - (float)k0i;
                         float aGi = li - (float)l0i;
