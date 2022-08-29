@@ -55,7 +55,7 @@ struct initData {
     int	N_iterations_per_thread;
     int shared_size_floats;
     int single_iso;
-    float log_c2Mm[15];
+    float log_c2Mm[16];
 };
 
 
@@ -116,7 +116,7 @@ __global__ void fillLDM(
                 int i = threadIdx.x + blockDim.x * (n + blockIdx.x * init_d.N_iterations_per_thread);
                 int iso_i;
                 if (init_d.single_iso > 0){
-                    iso_i = 0;
+                    iso_i = 1;
                 }
                 else{
                     iso_i = iso[i];

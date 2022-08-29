@@ -28,7 +28,7 @@ class initData(ctypes.Structure):
         ("N_iterations_per_thread", ctypes.c_int),
         ("shared_size_floats", ctypes.c_int),
         ("single_iso", ctypes.c_int),
-        ("log_c2Mm", ctypes.c_float * 15),
+        ("log_c2Mm", ctypes.c_float * 16),
     ]
 
 

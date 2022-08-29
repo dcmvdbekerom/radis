@@ -39,7 +39,7 @@ sf = SpectrumFactory(
     2150,
     2450,  # cm-1
     molecule="CO2",
-    isotope="1",
+    isotope="1,2",
     wstep=0.002,
 )
 
