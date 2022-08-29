@@ -519,7 +519,7 @@ def gpu_init(
 
     # #Copy spectral data to device
 
-    init_h.single_iso = iso[0] if len(iso) == 1 else 0
+    # init_h.single_iso = iso[0] if len(iso) == 1 else 0
     iso_d = array(iso)
     v0_d = array(v0)
     da_d = array(da)

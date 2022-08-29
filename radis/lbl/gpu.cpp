@@ -119,7 +119,7 @@ __global__ void fillLDM(
                     iso_i = 1;
                 }
                 else{
-                    iso_i = iso[i];
+                iso_i = iso[i];
                 }
                 log_c2Mm_i = init_d.log_c2Mm[iso_i];
                 Q_i = iter_d.Q[iso_i];
