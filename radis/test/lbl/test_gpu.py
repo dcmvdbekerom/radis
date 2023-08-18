@@ -64,16 +64,15 @@ def test_eq_spectrum_gpu(plot, *args, **kwargs):
     test_eq_spectrum_emulated_gpu(emulate=False, plot=plot, *args, **kwargs)
 
 
-def test_1SF_2spectra():
+@pytest.mark.needs_cuda
+@pytest.mark.fast
+def test_single_SF_4_several_spectra():
     """
-    This function tests if a single SpectrumFactory can be used twice to calculate a spectrum.
+    This function tests if a single SpectrumFactory can be used several times to calculate a spectrum.
 
     Returns
     -------
-    s : Spectrum
-        Just here for flake8 in pre-commit hooks.
-    s2 : Spectrum
-        Just here for flake8 in pre-commit hooks.
+    None
 
     """
     sf = SpectrumFactory(
@@ -86,19 +85,25 @@ def test_1SF_2spectra():
         format="cdsd-4000",
         parfuncfmt="hapi",
     )
-
+    #%% Pure CPU
+    s1_cpu = sf.eq_spectrum(
+        Tgas=1000.0,  # K
+    )
+    integral_CPU = s1_cpu.get_integral("absorbance")
     #%% Spectrum 1
-    s = sf.eq_spectrum_gpu(
+    s1_gpu = sf.eq_spectrum_gpu(
         Tgas=1000.0,  # K
         emulate=False,  # runs on GPU
     )
+    integral_GPU = s1_gpu.get_integral("absorbance")
 
+    assert abs(1 - integral_CPU / integral_GPU) < 1e-5
     #%% Spectrum 2
-    s2 = sf.eq_spectrum_gpu(
+    s2_gpu = sf.eq_spectrum_gpu(
         Tgas=1100.0,  # K
         emulate=False,  # runs on GPU
     )
-    return s, s2
+    assert not (get_residual(s2_gpu, s1_gpu, "abscoeff") < 1.4e-5)
 
 
 def test_diluent_broadening():
