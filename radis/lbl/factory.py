@@ -656,6 +656,59 @@ class SpectrumFactory(BandFactory):
 
         return
 
+    def _preprocessing_eq_functions(
+        self,
+        Tgas,
+        mole_fraction=None,
+        path_length=None,
+        diluent=None,
+        pressure=None,
+        name=None,
+    ):
+        """Preprocessing the SpectrumFactory.eq_spectrum and SpectrumFactory.eq_spectrum_gpu function"""
+
+        # Check inputs
+        if not self.input.self_absorption:
+            raise ValueError(
+                "Use non_eq_spectrum(Tgas, Tgas) to calculate spectra "
+                + "without self_absorption"
+            )
+        self.input.rot_distribution = "boltzmann"  # equilibrium
+        self.input.vib_distribution = "boltzmann"  # equilibrium
+
+        # Get temperatures
+        self.input.Tgas = Tgas
+        self.input.Tvib = Tgas  # just for info
+        self.input.Trot = Tgas  # just for
+
+        # Convert units
+        Tgas = convert_and_strip_units(Tgas, u.K)
+        path_length = convert_and_strip_units(path_length, u.cm)
+        pressure = convert_and_strip_units(pressure, u.bar)
+
+        # update defaults
+        if path_length is not None:
+            self.input.path_length = path_length
+        if mole_fraction is not None:
+            self.input.mole_fraction = mole_fraction
+        if pressure is not None:
+            print("fun")
+            print(pressure)
+            self.input.pressure_mbar = pressure * 1e3
+        if not is_float(Tgas):
+            raise ValueError(
+                "Tgas should be float or Astropy unit. Got {0}".format(Tgas)
+            )
+
+        # Check variables
+        self._check_inputs(mole_fraction, max(flatten(Tgas)))
+
+        # Retrieve Spectrum from database if it exists
+        if self.autoretrievedatabase:
+            s = self._retrieve_from_database()
+            if s is not None:
+                return s  # exit function
+
     # %% ======================================================================
     # PUBLIC METHODS
     # ------------------------
@@ -737,55 +790,27 @@ class SpectrumFactory(BandFactory):
         """
         # %% Preprocessing
         # --------------------------------------------------------------------
-
-        # Check inputs
-        if not self.input.self_absorption:
-            raise ValueError(
-                "Use non_eq_spectrum(Tgas, Tgas) to calculate spectra "
-                + "without self_absorption"
-            )
-
-        # Convert units
-        Tgas = convert_and_strip_units(Tgas, u.K)
-        path_length = convert_and_strip_units(path_length, u.cm)
-        pressure = convert_and_strip_units(pressure, u.bar)
-
-        # update defaults
-        if path_length is not None:
-            self.input.path_length = path_length
-        if mole_fraction is not None:
-            self.input.mole_fraction = mole_fraction
-        if pressure is not None:
-            self.input.pressure_mbar = pressure * 1e3
-        if not is_float(Tgas):
-            raise ValueError(
-                "Tgas should be float or Astropy unit. Got {0}".format(Tgas)
-            )
-        self.input.rot_distribution = "boltzmann"  # equilibrium
-        self.input.vib_distribution = "boltzmann"  # equilibrium
-
-        # Get temperatures
-        self.input.Tgas = Tgas
-        self.input.Tvib = Tgas  # just for info
-        self.input.Trot = Tgas  # just for info
-
+        self._preprocessing_eq_functions(
+            Tgas=Tgas,
+            mole_fraction=mole_fraction,
+            path_length=path_length,
+            diluent=diluent,
+            pressure=pressure,
+            name=name,
+        )
         # Init variables
         pressure_mbar = self.input.pressure_mbar
         mole_fraction = self.input.mole_fraction
         path_length = self.input.path_length
         verbose = self.verbose
 
+        # Convert units
+        Tgas = convert_and_strip_units(Tgas, u.K)
+        path_length = convert_and_strip_units(path_length, u.cm)
+        pressure = convert_and_strip_units(pressure, u.bar)
+
         # New Profiler object
-        self._reset_profiler(verbose)
-
-        # Check variables
-        self._check_inputs(mole_fraction, max(flatten(Tgas)))
-
-        # Retrieve Spectrum from database if it exists
-        if self.autoretrievedatabase:
-            s = self._retrieve_from_database()
-            if s is not None:
-                return s  # exit function
+        self._reset_profiler(self.verbose)
 
         # %% Start
         # --------------------------------------------------------------------
@@ -1020,54 +1045,29 @@ class SpectrumFactory(BandFactory):
 
         # %% Preprocessing
         # --------------------------------------------------------------------
-
-        # Check inputs
-        if not self.input.self_absorption:
-            raise ValueError(
-                "Use non_eq_spectrum(Tgas, Tgas) to calculate spectra "
-                + "without self_absorption"
-            )
+        self._preprocessing_eq_functions(
+            Tgas=Tgas,
+            mole_fraction=mole_fraction,
+            path_length=path_length,
+            diluent=diluent,
+            pressure=pressure,
+            name=name,
+        )
+        # Init variables
+        pressure_mbar = self.input.pressure_mbar
+        mole_fraction = self.input.mole_fraction
+        path_length = self.input.path_length
+        verbose = self.verbose
 
         # Convert units
         Tgas = convert_and_strip_units(Tgas, u.K)
         path_length = convert_and_strip_units(path_length, u.cm)
         pressure = convert_and_strip_units(pressure, u.bar)
 
-        # update defaults
-        if path_length is not None:
-            self.input.path_length = path_length
-        if mole_fraction is not None:
-            self.input.mole_fraction = mole_fraction
-        if pressure is not None:
-            self.input.pressure_mbar = pressure * 1e3
-        if not is_float(Tgas):
-            raise ValueError("Tgas should be float.")
-        self.input.rot_distribution = "boltzmann"  # equilibrium
-        self.input.vib_distribution = "boltzmann"  # equilibrium
-
-        # Get temperatures
-        self.input.Tgas = Tgas
-        self.input.Tvib = Tgas  # just for info
-        self.input.Trot = Tgas  # just for info
-
-        verbose = self.verbose
-
         # New Profiler object
-        self._reset_profiler(verbose)
-
-        # Init variables
-        pressure_mbar = self.input.pressure_mbar
-        mole_fraction = self.input.mole_fraction
-        path_length = self.input.path_length
-
-        # Check variables
-        self._check_inputs(mole_fraction, max(flatten(Tgas)))
-
-        # Retrieve Spectrum from database if it exists
-        if self.autoretrievedatabase:
-            s = self._retrieve_from_database()
-            if s is not None:
-                return s  # exit function
+        self._reset_profiler(self.verbose)
+        # %% Start
+        # --------------------------------------------------------------------
 
         ### GET ISOTOPE ABUNDANCE & MOLECULAR MASS ###
 
