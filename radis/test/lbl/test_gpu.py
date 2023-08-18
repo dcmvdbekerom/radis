@@ -13,30 +13,30 @@ from radis import SpectrumFactory, get_residual
 from radis.misc.printer import printm
 from radis.test.utils import getTestFile
 
+T = 1000
+fixed_conditions = {
+    "path_length": 1,
+    "wmin": 2284,
+    "wmax": 2285,
+    "pressure": 0.1,
+    "wstep": 0.001,
+    "mole_fraction": 0.01,  # until self and air broadening is implemented
+}
+ignored_warning = {
+    "MissingSelfBroadeningWarning": "ignore",
+    "NegativeEnergiesWarning": "ignore",
+    "HighTemperatureWarning": "ignore",
+    "GaussianBroadeningWarning": "ignore",
+}
+
 
 def test_eq_spectrum_emulated_gpu(emulate=True, plot=False, *args, **kwargs):
 
     print("Emulate: ", emulate)
-    T = 1000
-    p = 0.1
-    wstep = 0.001
-    wmin = 2284.0  # cm-1
-    wmax = 2285.0  # cm-1
 
     sf = SpectrumFactory(
-        wavenum_min=wmin,
-        wavenum_max=wmax,
-        mole_fraction=0.01,  # until self and air broadening is implemented
-        path_length=1,  # doesnt change anything
-        wstep=wstep,
-        pressure=p,
-        isotope="1,2",
-        warnings={
-            "MissingSelfBroadeningWarning": "ignore",
-            "NegativeEnergiesWarning": "ignore",
-            "HighTemperatureWarning": "ignore",
-            "GaussianBroadeningWarning": "ignore",
-        },
+        **fixed_conditions,
+        warnings=ignored_warning,
     )
     sf._broadening_method = "fft"
     sf.load_databank(
@@ -61,6 +61,43 @@ def test_eq_spectrum_emulated_gpu(emulate=True, plot=False, *args, **kwargs):
 @pytest.mark.needs_cuda
 def test_eq_spectrum_gpu(plot, *args, **kwargs):
     test_eq_spectrum_emulated_gpu(emulate=False, plot=plot, *args, **kwargs)
+
+
+def test_1SF_2spectra():
+    """
+    This function tests if a single SpectrumFactory can be used twice to calculate a spectrum.
+
+    Returns
+    -------
+    s : Spectrum
+        Just here for flake8 in pre-commit hooks.
+    s2 : Spectrum
+        Just here for flake8 in pre-commit hooks.
+
+    """
+    sf = SpectrumFactory(
+        **fixed_conditions,
+        warnings=ignored_warning,
+    )
+
+    sf.load_databank(
+        path=getTestFile("cdsd_hitemp_09_fragment.txt"),
+        format="cdsd-4000",
+        parfuncfmt="hapi",
+    )
+
+    #%% Spectrum 1
+    s = sf.eq_spectrum_gpu(
+        Tgas=1000.0,  # K
+        emulate=False,  # runs on GPU
+    )
+
+    #%% Spectrum 2
+    s2 = sf.eq_spectrum_gpu(
+        Tgas=1100.0,  # K
+        emulate=False,  # runs on GPU
+    )
+    return s, s2
 
 
 # --------------------------
