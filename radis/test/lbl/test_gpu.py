@@ -7,6 +7,7 @@ Created on Sun Aug 22 13:34:42 2020
 ------------------------------------------------------------------------
 
 """
+import numpy as np
 import pytest
 
 from radis import SpectrumFactory, get_residual
@@ -98,6 +99,24 @@ def test_1SF_2spectra():
         emulate=False,  # runs on GPU
     )
     return s, s2
+
+
+def test_diluent_broadening():
+    sf = SpectrumFactory(**fixed_conditions, warnings=ignored_warning, molecule="CO")
+    sf.fetch_databank("hitran")
+
+    s1 = sf.eq_spectrum_gpu(
+        Tgas=300, emulate=False, diluent={"air": 0.1, "He": 0.89}  # K  # runs on GPU
+    )
+    s2 = sf.eq_spectrum_gpu(
+        Tgas=300, emulate=False, diluent={"air": 0.99}  # K  # runs on GPU
+    )
+
+    # the integral of the absorbance should be the same
+    assert np.isclose(s1.get_integral("absorbance"), s2.get_integral("absorbance"))
+
+    # the broadening should NOT be the same
+    assert not (get_residual(s1, s2, "abscoeff") < 1.4e-5)
 
 
 # --------------------------
