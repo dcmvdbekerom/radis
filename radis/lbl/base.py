@@ -3863,7 +3863,14 @@ class BaseFactory(DatabankLoader):
 
         # Check mole fractions
         if mole_fraction is None:
-            raise ValueError("Set mole_fraction")
+            if (
+                self.input.mole_fraction is None
+            ):  # mole_fraction NOT defined in SpectrumFactory
+                raise ValueError(
+                    "Set mole_fraction either in `SpectrumFactory` or `eq_spectrum`"
+                )
+            else:  # mole_fraction IS defined in SpectrumFactory
+                mole_fraction = self.input.mole_fraction
         if mole_fraction > 1:
             self.warn("mole_fraction is > 1", "InputConditionsWarning")
 
