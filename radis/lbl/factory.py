@@ -1069,6 +1069,34 @@ class SpectrumFactory(BandFactory):
         # %% Start
         # --------------------------------------------------------------------
 
+        self.profiler.start("spectrum_calculation", 1)
+        self.profiler.start("spectrum_calc_before_obj", 2)
+
+        # Check database, reset populations, create line dataframe to be scaled
+        # --------------------------------------------------------------------
+        self._check_line_databank()
+        self._reinitialize()  # creates scaled dataframe df1 from df0
+
+        # --------------------------------------------------------------------
+
+        # First calculate the linestrength at given temperature
+        self.calc_linestrength_eq(Tgas)  # scales S0 to S (equivalent to S0 in code)
+        self._cutoff_linestrength()
+
+        # ----------------------------------------------------------------------
+
+        # Calculate line shift
+        self.calc_lineshift()  # scales wav to shiftwav (equivalent to v0)
+
+        # ... calculate broadening  HWHM
+        self._calc_broadening_HWHM()
+
+        # ----------------------------------------------------------------------
+        # Line broadening
+
+        # ... generates molefraction for diluents
+        self._generate_diluent_molefraction(mole_fraction, diluent)
+
         ### GET ISOTOPE ABUNDANCE & MOLECULAR MASS ###
 
         molpar = self.molparam
@@ -1109,9 +1137,6 @@ class SpectrumFactory(BandFactory):
 
         molarmass_arr[np.isnan(molarmass_arr)] = 0
 
-        self.profiler.start("spectrum_calculation", 1)
-        self.profiler.start("spectrum_calc_before_obj", 2)
-
         # generate the v_arr
         v_arr = np.arange(
             self.input.wavenum_min,
@@ -1128,13 +1153,13 @@ class SpectrumFactory(BandFactory):
         elif len(iso_set) == 1:
             iso = np.full(len(v0), iso_set[0], dtype=np.uint8)
 
-        da = df["Pshft"].to_numpy(dtype=np.float32)
-        El = df["El"].to_numpy(dtype=np.float32)
+        # da = df["Pshft"].to_numpy(dtype=np.float32)
+        # El = df["El"].to_numpy(dtype=np.float32)
         na = df["Tdpair"].to_numpy(dtype=np.float32)
 
-        gamma = np.array(
-            self._get_lorentzian_broadening(mole_fraction), dtype=np.float32
-        )
+        # gamma = np.array(
+        #     self._get_lorentzian_broadening(mole_fraction), dtype=np.float32
+        # )
 
         self.calc_S0()
         S0 = self.df0["S0"].to_numpy(dtype=np.float32)
@@ -1155,18 +1180,18 @@ class SpectrumFactory(BandFactory):
             dxL,
             iso,
             v0,
-            da,
-            gamma,
+            np.array(self.df1["hwhm_gauss"], dtype=np.float32),
+            np.array(self.df1["hwhm_lorentz"], dtype=np.float32),
             na,
             S0,
-            El,
+            df["El"].to_numpy(dtype=np.float32),
             molarmass_arr,
             Q_interp_list,
-            verbose=verbose,
+            verbose=self.verbose,
             emulate=emulate,
         )
 
-        if verbose >= 2:
+        if self.verbose >= 2:
             print("Initialization complete!")
 
         wavenumber = v_arr
