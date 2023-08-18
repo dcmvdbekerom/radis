@@ -1,40 +1,39 @@
-from ctypes import Structure, c_float, c_int
+from ctypes import Structure, c_float, c_int, c_size_t
 
 
 class threadIdx_t(Structure):
     _fields_ = [
-        ("x", c_int),
-        ("y", c_int),
-        ("z", c_int),
+        ("x", c_size_t),
+        ("y", c_size_t),
+        ("z", c_size_t),
     ]
 
 
 class blockDim_t(Structure):
     _fields_ = [
-        ("x", c_int),
-        ("y", c_int),
-        ("z", c_int),
+        ("x", c_size_t),
+        ("y", c_size_t),
+        ("z", c_size_t),
     ]
 
 
 class blockIdx_t(Structure):
     _fields_ = [
-        ("x", c_int),
-        ("y", c_int),
-        ("z", c_int),
+        ("x", c_size_t),
+        ("y", c_size_t),
+        ("z", c_size_t),
     ]
 
 
 class gridDim_t(Structure):
     _fields_ = [
-        ("x", c_int),
-        ("y", c_int),
-        ("z", c_int),
+        ("x", c_size_t),
+        ("y", c_size_t),
+        ("z", c_size_t),
     ]
 
 
-# TODO: capitalize first letters
-class initData(Structure):
+class initData_t(Structure):
     _fields_ = [
         ("v_min", c_float),
         ("v_max", c_float),
@@ -50,7 +49,7 @@ class initData(Structure):
     ]
 
 
-class iterData(Structure):
+class iterData_t(Structure):
     _fields_ = [
         ("p", c_float),
         ("log_2p", c_float),
